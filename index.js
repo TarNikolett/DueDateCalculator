@@ -10,7 +10,7 @@ function setResolveDate(date, month, dayNumber, hours, minutes, year) {
 };
 
 function getLastDayOfMonth(date) {
-  return new Date(2021, date.getMonth(), 0).getDate();
+  return new Date(date.getFullYear(), date.getMonth(), 0).getDate();
 };
 
 function isItWeekend(index) {
@@ -34,21 +34,14 @@ function isItTheEndOfTheWorkingDay(hour) {
   return false;
 };
 
-function isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) {
-  if (dayNumber === lastDayOfMonth) {
+function isItTheLastDayOfTheYear(month, lastDayOfMonth, dayNumber){
+  if(month === 11 && dayNumber === lastDayOfMonth){
     return true;
   }
   return false;
 };
 
-function isItTheLastMonthOfTheYear(month) {
-  if (month === 11) {
-    return true;
-  }
-  return false;
-};
-
-function CalculateDueDate (currentDate, turnaroundTime){
+function CalculateDueDate(currentDate, turnaroundTime){
   const reportedDate = new Date(currentDate);
   let year = reportedDate.getFullYear();
   let month = reportedDate.getMonth();
@@ -57,6 +50,7 @@ function CalculateDueDate (currentDate, turnaroundTime){
   let hours = reportedDate.getHours();
   let minutes = reportedDate.getMinutes();
   let resolvedDay = new Date(`${month} ${dayNumber}, ${year} ${hours}:${minutes}`);  
+  let resolveTime = turnaroundTime;
 
   if (isItWeekend(dayNameIndex)) {
     console.log("Today is a non-working day!");
@@ -70,94 +64,37 @@ function CalculateDueDate (currentDate, turnaroundTime){
 
   for(let i = 1; i <= turnaroundTime; i++){
     let lastDayOfMonth = getLastDayOfMonth(new Date(year, month + 1, dayNumber));
-    if (i % 8 === 0) {
-      if (isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours)) {
-        hours = workDayStartingHour; 
+    if(resolveTime > 0){
+      if (!isItTheEndOfTheWorkingDay(hours)) {
         hours++;
-        dayNumber = dayNumber + 3;
-        dayNameIndex = 1;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
+        resolveTime--;
       }
-      else if(isItFriday(dayNameIndex) && !isItTheEndOfTheWorkingDay(hours)){
-        hours++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-      }
-      else if (!isItFriday(dayNameIndex) && !isItTheEndOfTheWorkingDay(hours)) {
-        hours++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-      }
-      else if (!isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours)) {
+      else if (isItTheEndOfTheWorkingDay(hours) && !isItFriday(dayNameIndex)) {
+        if (isItTheLastDayOfTheYear(month, lastDayOfMonth, dayNumber)) {
+          year++;
+        }
         dayNumber++;
+        hours = workDayStartingHour;
+        hours++;
         dayNameIndex++;
-        hours = workDayStartingHour;
-        hours++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-      } 
-      else if (!isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours) && !isItTheLastMonthOfTheYear(month) && !isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) ) {
-        hours = workDayStartingHour;
-        hours++;
-        dayNumber++;
-        dayNameIndex++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
+        resolveTime--;
       }
-      else if (isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours) && !isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) && !isItTheLastMonthOfTheYear(month)) {
+      else if (isItTheEndOfTheWorkingDay(hours) && isItFriday(dayNameIndex)) {
+        if (isItTheLastDayOfTheYear(month, lastDayOfMonth, dayNumber)) {
+          year++;
+        }
         dayNumber = dayNumber + 3;
-        dayNameIndex = 1;
         hours = workDayStartingHour;
         hours++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-      }
-      else if (isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours) && isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) && !isItTheLastMonthOfTheYear(month)) {
-        dayNumber = dayNumber + 3;
         dayNameIndex = 1;
-        hours = workDayStartingHour;
-        hours++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-      }
-      else if (isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours) && isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) && isItTheLastMonthOfTheYear(month)) {
-        dayNumber = dayNumber + 3;
-        dayNameIndex = 1;
-        hours = workDayStartingHour;
-        hours++;
-        year++;
-        setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
+        resolveTime--;
       }
     }
-    else if (isItTheEndOfTheMonth(dayNumber, lastDayOfMonth) && isItTheLastMonthOfTheYear(month) && isItTheEndOfTheWorkingDay(hours)) {
-      if (isItFriday(dayNameIndex)){
-        dayNumber = dayNumber + 3;
-        dayNameIndex = 1;
-      }
-      else{
-        dayNameIndex++;
-        dayNumber++;
-      }
-      hours = workDayStartingHour;
-      hours++;
-      year++;
-      setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-    }
-    else if (isItFriday(dayNameIndex) && isItTheEndOfTheWorkingDay(hours)) {
-      dayNumber = dayNumber + 3;
-      dayNameIndex = 1;
-      hours = workDayStartingHour;
-      hours++;
-      setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-    }
-    else if (hours < workDayEndingHour) {
-      hours++;
-      setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-    }
-    else if (isItTheEndOfTheWorkingDay(hours)) {
-      hours = workDayStartingHour;
-      hours++;
-      dayNumber++;
-      dayNameIndex++;
-      setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
-    }
- };
+  };
+  setResolveDate(resolvedDay, month, dayNumber, hours, minutes, year);
   console.log(`Reported day: ${reportedDate}`);
   console.log(`Resolved day: ${resolvedDay}`);
 };
 
-CalculateDueDate("Jun 18, 2021 11:00", 10);
+
+CalculateDueDate("Jun 28, 2022 14:00", 34);
